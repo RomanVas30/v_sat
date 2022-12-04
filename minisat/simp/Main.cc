@@ -99,6 +99,7 @@ int main(int argc, char** argv)
         parse_DIMACS(in, S, (bool)strictp);
         gzclose(in);
         FILE* res = (argc >= 3) ? fopen(argv[2], "wb") : NULL;
+        int key_length = (argc >= 4) ? atoi(argv[3]) : 0;
 
         if (S.verbosity > 0){
             printf("|  Number of variables:  %12d                                         |\n", S.nVars());
@@ -151,6 +152,23 @@ int main(int argc, char** argv)
                     if (S.model[i] != l_Undef)
                         fprintf(res, "%s%s%d", (i==0)?"":" ", (S.model[i]==l_True)?"":"-", i+1);
                 fprintf(res, " 0\n");
+                if (key_length) {
+                    fprintf(res, "\nPLAIN:  ");
+                    for (int i = 0; i < key_length; i++)
+                        if (S.model[i] != l_Undef)
+                            fprintf(res, S.model[i]==l_True?"1":"0");
+
+                    fprintf(res, "\nKEY:    ");
+                    for (int i = key_length; i < key_length * 2; i++)
+                        if (S.model[i] != l_Undef)
+                            fprintf(res, S.model[i]==l_True?"1":"0");
+
+                    fprintf(res, "\nCIPHER: ");
+                    for (int i = S.nVars() - key_length; i < S.nVars(); i++)
+                        if (S.model[i] != l_Undef)
+                            fprintf(res, S.model[i]==l_True?"1":"0");
+                }
+                
             }else if (ret == l_False)
                 fprintf(res, "UNSAT\n");
             else

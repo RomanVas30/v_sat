@@ -261,9 +261,24 @@ Lit Solver::pickBranchLit()
         if (order_heap.empty()){
             next = var_Undef;
             break;
-        }else
-            next = order_heap.removeMin();
+        } else {
+            vec<Var> top_percent_vars;
+            order_heap.selectTop10Percent(top_percent_vars);
 
+            if (top_percent_vars.size() > 0) {
+                next = top_percent_vars[0];                
+
+                for (int i = 1; i < top_percent_vars.size(); i++) {
+                    if (var_weight[top_percent_vars[i]] > var_weight[next]) {
+                        next = top_percent_vars[i];
+                    }
+                }
+
+                order_heap.remove(next);
+            } else {
+                next = order_heap.removeMin();
+            }
+        }
     // Choose polarity based on different polarity modes (global or per-variable):
     if (next == var_Undef)
         return lit_Undef;
@@ -598,13 +613,19 @@ void Solver::reduceDB()
 }
 
 
-void Solver::removeSatisfied(vec<CRef>& cs)
+void Solver::removeSatisfied(vec<CRef>& cs, bool is_clauses)
 {
     int i, j;
     for (i = j = 0; i < cs.size(); i++){
         Clause& c = ca[cs[i]];
-        if (satisfied(c))
+        if (satisfied(c)) {
+            if (!is_clauses) {
+                for (int k = 0; k < c.size(); k++) {
+                    var_weight[var(c[k])] -= pow(2, c.size() * (-1));
+                }
+            }
             removeClause(cs[i]);
+        }
         else{
             // Trim clause:
             assert(value(c[0]) == l_Undef && value(c[1]) == l_Undef);
@@ -649,9 +670,9 @@ bool Solver::simplify()
         return true;
 
     // Remove satisfied clauses:
-    removeSatisfied(learnts);
+    removeSatisfied(learnts, false);
     if (remove_satisfied){       // Can be turned off.
-        removeSatisfied(clauses);
+        removeSatisfied(clauses, true);
 
         // TODO: what todo in if 'remove_satisfied' is false?
 
@@ -723,6 +744,11 @@ lbool Solver::search(int nof_conflicts)
             }else{
                 CRef cr = ca.alloc(learnt_clause, true);
                 learnts.push(cr);
+
+                for (int i = 0; i < learnt_clause.size(); i++) {
+                    var_weight[var(learnt_clause[i])] += pow(2, learnt_clause.size() * (-1));
+                }
+                
                 attachClause(cr);
                 claBumpActivity(ca[cr]);
                 uncheckedEnqueue(learnt_clause[0], cr);

@@ -42,6 +42,10 @@ public:
     Solver();
     virtual ~Solver();
 
+    // Init
+    //
+    void     varWeightInit    (int var_number) { var_weight.growTo(var_number); };
+
     // Problem specification:
     //
     Var     newVar    (lbool upol = l_Undef, bool dvar = true); // Add a new variable with parameters specifying variable mode.
@@ -187,6 +191,7 @@ protected:
 
     // Solver state:
     //
+    vec<double>         var_weight;       // List of weight variables.
     vec<CRef>           clauses;          // List of problem clauses.
     vec<CRef>           learnts;          // List of learnt clauses.
     vec<Lit>            trail;            // Assignment stack; stores all assigments made in the order they were made.
@@ -251,7 +256,7 @@ protected:
     lbool    search           (int nof_conflicts);                                     // Search for a given number of conflicts.
     lbool    solve_           ();                                                      // Main solve method (assumptions given in 'assumptions').
     void     reduceDB         ();                                                      // Reduce the set of learnt clauses.
-    void     removeSatisfied  (vec<CRef>& cs);                                         // Shrink 'cs' to contain only non-satisfied clauses.
+    void     removeSatisfied  (vec<CRef>& cs, bool is_clauses);                        // Shrink 'cs' to contain only non-satisfied clauses.
     void     rebuildOrderHeap ();
 
     // Maintaining Variable/Clause activity:

@@ -135,6 +135,24 @@ class Heap {
         return x; 
     }
 
+    void selectTop10Percent(vec<K>& top)
+    {
+        //heap is empty
+        if (heap.size() == 0) return;
+
+        //heap size <= 10
+        top.push(heap[0]);
+        if (heap.size() <= 10) return;
+
+        //heap size > 10
+        int top10Percent = heap.size() / 10 + 1;
+        for (int i = 1; i < top10Percent; i++)
+        {
+            top.push(heap[i]);
+        }
+    }
+
+
 
     // Rebuild the heap from scratch, using the elements in 'ns':
     void build(const vec<K>& ns) {
